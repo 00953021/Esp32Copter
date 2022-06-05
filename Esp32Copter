@@ -1,18 +1,18 @@
-#include <esp_now.h>
+#include <esp_now.h>  //引用函式庫
 #include <WiFi.h>
 #include <Wire.h>
 #include <EEPROM.h>
 
 #include "RC.h"
 
-#define WIFI_CHANNEL 4
+#define WIFI_CHANNEL 4   /定義變數
 #define PWMOUT  // normal esc, uncomment for serial esc
 #define LED 2
 #define CALSTEPS 256 // gyro and acc calibration steps
 //#define externRC // use of external RC receiver in ppmsum mode
 //#define webServer // use of webserver to change PID
 
-extern int16_t accZero[3];
+extern int16_t accZero[3]; //告知程式到別的地方找尋變數的定義
 extern float yawRate;
 extern float rollPitchRate;
 extern float P_PID;
@@ -22,44 +22,45 @@ extern float P_Level_PID;
 extern float I_Level_PID;
 extern float D_Level_PID;
 
-volatile boolean recv;
+volatile boolean recv;  //定義變數具有最佳化、多執行緒相關的特殊屬性，阻止編譯器因誤認某段程式碼無法被程式碼本身所改變
 //volatile int peernum = 0;
 //esp_now_peer_info_t slave;
 
-void recv_cb(const uint8_t *macaddr, const uint8_t *data, int len)
+void recv_cb(const uint8_t *macaddr, const uint8_t *data, int len) //定義recv_cb函式
 {
   recv = true;
-  //Serial.print("recv_cb ");
-  //Serial.println(len); 
-  if (len == RCdataSize) 
+  //Serial.print("recv_cb ");  //印出recv_cb
+  //Serial.println(len); //印出len值並換行
+  if (len == RCdataSize) //如果RC數據大小等於len的值
   {
-    for (int i=0;i<RCdataSize;i++) RCdata.data[i] = data[i];
+    for (int i=0;i<RCdataSize;i++) //在i的值小於RC數據大小時會執行此迴圈
+    RCdata.data[i] = data[i];  //把RC數據的陣列指定給data陣列
   }
   /*
-  if (!esp_now_is_peer_exist(macaddr))
+  if (!esp_now_is_peer_exist(macaddr))  //如果不存在於mac address
   {
-    Serial.println("adding peer ");
-    esp_now_add_peer(macaddr, ESP_NOW_ROLE_COMBO, WIFI_CHANNEL, NULL, 0);
-    peernum++;
+    Serial.println("adding peer "); //印出adding peer且換行
+    esp_now_add_peer(macaddr, ESP_NOW_ROLE_COMBO, WIFI_CHANNEL, NULL, 0); //使用此函式以配對esp設備
+    peernum++; //peernum+1
   }
   */
 };
 
-#define ACCRESO 4096
+#define ACCRESO 4096  //定義變數
 #define CYCLETIME 3
 #define MINTHROTTLE 1090
 #define MIDRUD 1495
 #define THRCORR 19
 
-enum ang { ROLL,PITCH,YAW };
+enum ang { ROLL,PITCH,YAW }; //列舉不同角度(滾動、俯仰、偏離)
 
-static int16_t gyroADC[3];
+static int16_t gyroADC[3];  //宣告陣列值在函式呼叫之間將其值保留在記憶體中的變數
 static int16_t accADC[3];
 static int16_t gyroData[3];
 static float angle[2]    = {0,0};  
-extern int calibratingA;
+extern int calibratingA;  //告知程式到別的地方找尋變數的定義
 
-#ifdef flysky
+#ifdef flysky     //檢查定義是否存在
   #define ROL 0
   #define PIT 1
   #define THR 2
@@ -73,44 +74,44 @@ extern int calibratingA;
 
 #define AU1 4
 #define AU2 5
-static int16_t rcCommand[] = {0,0,0};
+static int16_t rcCommand[] = {0,0,0}; //宣告陣列在函式呼叫之間將其值保留在記憶體中的變數
 
 #define GYRO     0
 #define STABI    1
-static int8_t flightmode;
-static int8_t oldflightmode;
+static int8_t flightmode;  //宣告flightmode在函式呼叫之間將其值保留在記憶體中的變數
+static int8_t oldflightmode;  //宣告oldflightmode在函式呼叫之間將其值保留在記憶體中的變數
 
-boolean armed = false;
-uint8_t armct = 0;
+boolean armed = false; //armed的布林值為0
+uint8_t armct = 0; 
 int debugvalue = 0;
 
-void setup() 
+void setup() //定義setup()函式
 {
-  Serial.begin(115200); Serial.println();
+  Serial.begin(115200); Serial.println();  //設定band在115200執行，並輸出
 
   delay(3000); // give it some time to stop shaking after battery plugin
-  MPU6050_init();
-  MPU6050_readId(); // must be 0x68, 104dec
+  MPU6050_init();  //輸入MPU6050 ID number
+  MPU6050_readId(); // must be 0x68, 104dec //讀取MPU6050 ID number 
   
-  EEPROM.begin(64);
-  if (EEPROM.read(63) != 0x55) Serial.println("Need to do ACC calib");
-  else ACC_Read(); // eeprom is initialized
-  if (EEPROM.read(62) != 0xAA) Serial.println("Need to check and write PID");
-  else PID_Read(); // eeprom is initialized
+  EEPROM.begin(64); //將ID分配給64個RAM，且size介於0-4096
+  if (EEPROM.read(63) != 0x55) Serial.println("Need to do ACC calib"); //如果讀到的63個RAM不是0*55的格式，就會印出Need to do ACC calib
+  else ACC_Read(); // eeprom is initialized   //ACC讀取成功
+  if (EEPROM.read(62) != 0xAA) Serial.println("Need to check and write PID"); //如果讀到的62個RAM不是0*AA的格式，就會印出Need to check and write PID
+  else PID_Read(); // eeprom is initialized   //PID讀取成功
 
   
-  WiFi.mode(WIFI_STA); // Station mode for esp-now 
+  WiFi.mode(WIFI_STA); // Station mode for esp-now //連接WIFI
   #if defined webServer
-    setupwebserver();
+    setupwebserver(); //啟動setupwebserver
     delay(500); 
   #endif
 
 
-  #if defined externRC
-    init_RC();
-  #else
-    Serial.printf("This mac: %s, ", WiFi.macAddress().c_str()); 
-    Serial.printf(", channel: %i\n", WIFI_CHANNEL); 
+  #if defined externRC //如果externRC被定義
+    init_RC(); //寫入RC函式
+  #else 
+    Serial.printf("This mac: %s," , WiFi.macAddress().c_str()); //輸出(MACAddress,wifi 位置)
+    Serial.printf(", channel: %i\n", WIFI_CHANNEL);  //輸出WIFIchannel
     if (esp_now_init() != 0) Serial.println("*** ESP_Now init failed");
     esp_now_register_recv_cb(recv_cb);
   #endif
