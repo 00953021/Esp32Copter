@@ -112,107 +112,107 @@ void setup() //定義setup()函式
   #else 
     Serial.printf("This mac: %s," , WiFi.macAddress().c_str()); //輸出(MACAddress,wifi 位置)
     Serial.printf(", channel: %i\n", WIFI_CHANNEL);  //輸出WIFIchannel
-    if (esp_now_init() != 0) Serial.println("*** ESP_Now init failed");
-    esp_now_register_recv_cb(recv_cb);
+    if (esp_now_init() != 0) Serial.println("*** ESP_Now init failed");  //初始化ESP
+    esp_now_register_recv_cb(recv_cb);  //設定收到數據時CALLBACK的函式名稱。 通過ESP-NOW接收到數據後，將被呼叫以便進一步處理資料。
   #endif
 
   delay(500); 
-  pinMode(LED,OUTPUT);
-  digitalWrite(LED,LOW);
-  initServo();
+  pinMode(LED,OUTPUT);  //這裡設定所要輸出的PIN腳模式
+  digitalWrite(LED,LOW);  // 設定PIN LED腳位為低電位 = 0V
+  initServo(); //初始化
 }
 
 uint32_t rxt; // receive time, used for falisave
 
-void loop() 
+void loop()   //定義loop()
 {
-  uint32_t now,mnow,diff; 
-  now = millis(); // actual time
-  if (debugvalue == 5) mnow = micros();
+  uint32_t now,mnow,diff; //unsign int now,mnow,diff
+  now = millis(); // actual time  
+  if (debugvalue == 5) mnow = micros(); //如果debugvalue == 5, micros()指定給mnow
 
-  #if defined webServer
+  #if defined webServer //如果webServer被定義，就啟動網站伺服器
     loopwebserver();
   #endif
 
-  if (recv)
+  if (recv)  //如果有接收到
   {
-    recv = false;  
-    #if !defined externRC  
-      buf_to_rc();
+    recv = false;  //recv指定成false
+    #if !defined externRC  //如果externRC沒有被定義，執行buf_to_rc()
+      buf_to_rc() 
     #endif
 
-    if (debugvalue == 4) Serial.printf("%4d %4d %4d %4d \n", rcValue[0], rcValue[1], rcValue[2], rcValue[3]); 
+    if (debugvalue == 4) Serial.printf("%4d %4d %4d %4d \n", rcValue[0], rcValue[1], rcValue[2], rcValue[3]);  //如果debugvalue等於4，就輸出
   
-    if      (rcValue[AU1] < 1300) flightmode = GYRO;
-    else                          flightmode = STABI;   
-    if (oldflightmode != flightmode)
+    if      (rcValue[AU1] < 1300) flightmode = GYRO; //如果rcValue[AU1] < 1300，飛行模式設定成GYRO
+    else                          flightmode = STABI;   //否則設定成STABI
+    if (oldflightmode != flightmode) //若原本的飛行模式不等於新的，執行zeroGyroAccI()
     {
       zeroGyroAccI();
-      oldflightmode = flightmode;
+      oldflightmode = flightmode; //再把新的flightmode指定給舊的flightmode
     }
 
-    if (armed) 
+    if (armed)  //如果有配備的話
     {
-      rcValue[THR]    -= THRCORR;
-      rcCommand[ROLL]  = rcValue[ROL] - MIDRUD;
-      rcCommand[PITCH] = rcValue[PIT] - MIDRUD;
-      rcCommand[YAW]   = rcValue[RUD] - MIDRUD;
-    }  
+      rcValue[THR]    -= THRCORR; 
+      rcCommand[ROLL]  = rcValue[ROL] - MIDRUD; //rcValue[ROL] - MIDRUD指定給接收滾動命令
+      rcCommand[PITCH] = rcValue[PIT] - MIDRUD;//rcValue[PIT] - MIDRUD指定給接受俯仰的命令
+      rcCommand[YAW]   = rcValue[RUD] - MIDRUD; //rcValue[RUD] - MIDRUD指定給接收偏差的命令
+      }  
     else
     {  
-      if (rcValue[THR] < MINTHROTTLE) armct++;
+      if (rcValue[THR] < MINTHROTTLE) armct++; 
       if (armct >= 25) 
       { 
-        digitalWrite(LED,HIGH); 
+        digitalWrite(LED,HIGH); // 設定PIN LED腳位為高電位 = 5V
         armed = true;
       }
     }
 
-    if (debugvalue == 5) Serial.printf("RC input ms: %d\n",now - rxt);
+    if (debugvalue == 5) Serial.printf("RC input ms: %d\n",now - rxt); //如果debugvalue等於5，則輸出
     rxt = millis();
   }
 
-  Gyro_getADC();
+  Gyro_getADC(); //執行紀錄角速度傳感器
   
-  ACC_getADC();
+  ACC_getADC(); //執行加速度傳感器
 
-  getEstimatedAttitude();
+  getEstimatedAttitude(); //執行估計姿態函數
 
-  pid();
+  pid(); //執行pid控制器
 
-  mix();
+  mix(); //執行mix函式
 
-  writeServo();
+  writeServo(); //執行writeServo()函式
   
   // Failsave part
   if (now > rxt+90)
   {
     rcValue[THR] = MINTHROTTLE;
-    if (debugvalue == 5) Serial.printf("RC Failsafe after %d \n",now-rxt);
-    rxt = now;
+    if (debugvalue == 5) Serial.printf("RC Failsafe after %d \n",now-rxt); //如果debugvalue等於5，則執行
+    rxt = now; 
   }
 
   // parser part
-  if (Serial.available())
+  if (Serial.available()) //如果Serial.available()是true則執行
   {
-    char ch = Serial.read();
+    char ch = Serial.read(); //把Serial.read()讀出來的字元指定給ch
     // Perform ACC calibration
-    if (ch == 10) Serial.println();
-    else if (ch == 'A')
+    if (ch == 10) Serial.println(); //如果ch的ASCII碼等於10
+    else if (ch == 'A') //如果ch的值等於'A'
     { 
-      Serial.println("Doing ACC calib");
+      Serial.println("Doing ACC calib"); //輸出Doing ACC calib
       calibratingA = CALSTEPS;
-      while (calibratingA != 0)
+      while (calibratingA != 0) //當calibratingA不等於0
       {
-        delay(CYCLETIME);
-        ACC_getADC(); 
+        delay(CYCLETIME); //延遲一循環時間
+        ACC_getADC(); //執行加速度傳感器
       }
-      ACC_Store();
-      Serial.println("ACC calib Done");
+      ACC_Store(); //儲存加速度值
+      Serial.println("ACC calib Done"); //輸出ACC calib Done
     }
-    else if (ch == 'R')
+    else if (ch == 'R') //如果ch的值等於'R'
     {
-      Serial.print("Act Rate :  ");
+      Serial.print("Act Rate :  ");                //輸出結果
       Serial.print(yawRate); Serial.print("  ");
       Serial.print(rollPitchRate); Serial.println();
       Serial.println("Act PID :");
@@ -223,9 +223,9 @@ void loop()
       Serial.print(I_Level_PID); Serial.print("  ");
       Serial.print(D_Level_PID); Serial.println();
     }
-    else if (ch == 'D')
+    else if (ch == 'D') //如果ch的值等於'D'
     {
-      Serial.println("Loading default PID");
+      Serial.println("Loading default PID"); //輸出Loading default PID
       yawRate = 6.0;
       rollPitchRate = 5.0;
       P_PID = 0.15;    // P8
