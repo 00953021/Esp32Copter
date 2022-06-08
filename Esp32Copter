@@ -234,16 +234,16 @@ void loop()   //定義loop()
       P_Level_PID = 0.35;   // P8
       I_Level_PID = 0.00;   // I8
       D_Level_PID = 0.10;
-      PID_Store();
+      PID_Store(); //儲存PID值
     }
-    else if (ch == 'W')
+    else if (ch == 'W') //如果ch的值等於'W'
     {
-      char ch = Serial.read();
-      int n = Serial.available();
-      if (n == 3)
+      char ch = Serial.read(); //把Serial.read()讀出來的字元指定給ch
+      int n = Serial.available();  //把Serial.available()的值指定給n
+      if (n == 3) //如果n=3
       {
-        n = readsernum();        
-        if      (ch == 'p') { P_PID       = float(n) * 0.01 + 0.004; Serial.print("pid P ");       Serial.print(P_PID); }
+        n = readsernum();     //把readsernum()指定給n
+        if      (ch == 'p') { P_PID       = float(n) * 0.01 + 0.004; Serial.print("pid P ");       Serial.print(P_PID); }   //輸出結果
         else if (ch == 'i') { I_PID       = float(n) * 0.01 + 0.004; Serial.print("pid I ");       Serial.print(I_PID); }
         else if (ch == 'd') { D_PID       = float(n) * 0.01 + 0.004; Serial.print("pid D ");       Serial.print(D_PID); }
         else if (ch == 'P') { P_Level_PID = float(n) * 0.01 + 0.004; Serial.print("pid Level P "); Serial.print(P_Level_PID); }
@@ -251,19 +251,19 @@ void loop()   //定義loop()
         else if (ch == 'D') { D_Level_PID = float(n) * 0.01 + 0.004; Serial.print("pid Level D "); Serial.print(D_Level_PID); }
         else Serial.println("unknown command");
       }
-      else if (ch == 'S') { PID_Store(); Serial.print("stored in EEPROM"); }
+      else if (ch == 'S') { PID_Store(); Serial.print("stored in EEPROM"); } //如果ch的值等於'S'，PID的值被儲存，輸出stored in EEPROM
       else 
       {
-        Serial.println("Input format wrong");
+        Serial.println("Input format wrong");                                //輸出結果
         Serial.println("Wpxx, Wixx, Wdxx - write gyro PID, example: Wd13");
         Serial.println("WPxx, WIxx, WDxx - write level PID, example: WD21");
       }
     }
-    else if (ch >= '0' && ch <='9') debugvalue = ch -'0';
+    else if (ch >= '0' && ch <='9') debugvalue = ch -'0'; //如果ch在0到9之間，則debugvalue被指定為ch -'0'
     else
     {
-      Serial.println("A - acc calib");
-      Serial.println("D - write default PID");
+      Serial.println("A - acc calib");   //輸出結果形式
+      Serial.println("D - write default PID"); 
       Serial.println("R - read actual PID");
       Serial.println("Wpxx, Wixx, Wdxx - write gyro PID");
       Serial.println("WPxx, WIxx, WDxx - write level PID");
@@ -278,24 +278,24 @@ void loop()   //定義loop()
     }
   }
 
-  if      (debugvalue == 1) Serial.printf("%4d %4d %4d \n", gyroADC[0], gyroADC[1], gyroADC[2]);  
-  else if (debugvalue == 2) Serial.printf("%5d %5d %5d \n", accADC[0], accADC[1], accADC[2]);
-  else if (debugvalue == 3) Serial.printf("%3f %3f \n", angle[0], angle[1]); 
+  if      (debugvalue == 1) Serial.printf("%4d %4d %4d \n", gyroADC[0], gyroADC[1], gyroADC[2]);  //如果debugvalue == 1輸出角速度的值
+  else if (debugvalue == 2) Serial.printf("%5d %5d %5d \n", accADC[0], accADC[1], accADC[2]); //如果debugvalue == 2輸出加速度值
+  else if (debugvalue == 3) Serial.printf("%3f %3f \n", angle[0], angle[1]);  //如果debugvalue == 3輸出角度值
   
   delay(CYCLETIME-1);  
 
-  if (debugvalue == 5) 
+  if (debugvalue == 5) //如果debugvalue == 5
   {
-    diff = micros() - mnow;
-    Serial.println(diff); 
+    diff = micros() - mnow; //設diff為micros() - mnow
+    Serial.println(diff); //輸出diff的值
   }
 }
 
-int readsernum()
+int readsernum() //設定 readsernum()輸出值為int型態
 {
-  int num;
-  char numStr[3];  
-  numStr[0] = Serial.read();
-  numStr[1] = Serial.read();
-  return atol(numStr);
+  int num; 
+  char numStr[3]; //定義 numStr字串
+  numStr[0] = Serial.read(); //把 Serial.read()讀取值放到字串第一個
+  numStr[1] = Serial.read();//再把Serial.read()的另一個讀取值放到字串第二個
+  return atol(numStr); //傳回numStr傳遞給函數調用的C-type字符串轉換為長整數
 }
