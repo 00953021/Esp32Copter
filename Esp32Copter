@@ -128,7 +128,7 @@ void loop()   //定義loop()
 {
   uint32_t now,mnow,diff; //unsign int now,mnow,diff
   now = millis(); // actual time  
-  if (debugvalue == 5) mnow = micros(); //如果debugvalue == 5, micros()指定給mnow
+  if (debugvalue == 5) mnow = micros(); //如果debugvalue == 5, 系統秒數指定給mnow
 
   #if defined webServer //如果webServer被定義，就啟動網站伺服器
     loopwebserver();
