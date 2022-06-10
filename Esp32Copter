@@ -147,7 +147,7 @@ void loop()   //定義loop()
     else                          flightmode = STABI;   //否則設定成穩定模式
     if (oldflightmode != flightmode) //若原本的飛行模式不等於新的，執行zeroGyroAccI()
     {
-      zeroGyroAccI();
+      zeroGyroAccI(); //歸零重力加速度
       oldflightmode = flightmode; //再把新的flightmode指定給舊的flightmode
     }
 
@@ -182,9 +182,9 @@ void loop()   //定義loop()
 
   mix(); //執行mix函式
 
-  writeServo(); //執行writeServo()函式
+  writeServo(); //執行紀錄函式
   
-  // Failsave part
+  // Failsave part //故障保護
   if (now > rxt+90)
   {
     rcValue[THR] = MINTHROTTLE;
@@ -192,11 +192,11 @@ void loop()   //定義loop()
     rxt = now; 
   }
 
-  // parser part
+  // parser part //數據解析
   if (Serial.available()) //如果Serial.available()是true則執行
   {
     char ch = Serial.read(); //把Serial.read()讀出來的字元指定給ch
-    // Perform ACC calibration
+    // Perform ACC calibration //加速度校準
     if (ch == 10) Serial.println(); //如果ch的ASCII碼等於10
     else if (ch == 'A') //如果ch的值等於'A'
     { 
